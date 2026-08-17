@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Optical Data Transfer</title>
+    <title>Optical Data Transfer Protocol</title>
     
     <!-- External Libraries -->
-    <!-- QRious for fast, reliable QR generation -->
+    <!-- QRious for high-speed, high-density QR generation -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
     <!-- jsQR for reading the QR stream -->
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
@@ -75,7 +75,7 @@
         .mode-selector {
             display: flex;
             gap: 10px;
-            margin-bottom: 20px;
+            margin-bottom: 10px;
         }
 
         .btn {
@@ -97,6 +97,20 @@
             background: var(--primary-color);
             color: var(--bg-color);
             box-shadow: 0 0 15px var(--primary-glow);
+        }
+
+        .btn.action-btn {
+            background: var(--success);
+            color: var(--bg-color);
+            border-color: var(--success);
+            font-weight: bold;
+            margin-top: 10px;
+            box-shadow: 0 0 10px rgba(0, 255, 102, 0.4);
+        }
+
+        .btn.action-btn:hover {
+            box-shadow: 0 0 20px rgba(0, 255, 102, 0.8);
+            background: #00df59;
         }
 
         .panel {
@@ -129,9 +143,7 @@
             box-shadow: inset 0 0 20px var(--primary-glow);
         }
 
-        #file-input {
-            display: none;
-        }
+        #file-input { display: none; }
 
         .transfer-display {
             display: flex;
@@ -140,32 +152,32 @@
             gap: 15px;
         }
 
-        canvas {
+        #tx-canvas {
             background: #fff;
-            padding: 10px;
+            padding: 15px;
             border-radius: 4px;
-            box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
-            max-width: 100%;
+            box-shadow: 0 0 30px rgba(255, 255, 255, 0.2);
+            /* Internal resolution is higher, CSS keeps it bounded for display */
+            width: 100%;
+            max-width: 450px; 
             height: auto;
-            width: 350px;
-            height: 350px;
         }
 
         /* Receive Panel Specifics */
         .video-container {
             position: relative;
             width: 100%;
-            max-width: 400px;
+            max-width: 450px;
             margin: 0 auto;
             border: 2px solid var(--primary-color);
             box-shadow: 0 0 15px var(--primary-glow);
             overflow: hidden;
+            background: #000;
         }
 
         #video {
             width: 100%;
             display: block;
-            background: #000;
         }
 
         .scan-line {
@@ -175,8 +187,8 @@
             width: 100%;
             height: 2px;
             background: var(--primary-color);
-            box-shadow: 0 0 10px var(--primary-color);
-            animation: scan 2s linear infinite;
+            box-shadow: 0 0 15px var(--primary-color);
+            animation: scan 1.5s linear infinite;
         }
 
         @keyframes scan {
@@ -192,13 +204,14 @@
             font-size: 0.9rem;
             line-height: 1.5;
             width: 100%;
+            word-break: break-word;
         }
 
         .progress-container {
             width: 100%;
-            height: 10px;
+            height: 12px;
             background: #1e293b;
-            border-radius: 5px;
+            border-radius: 6px;
             overflow: hidden;
             margin-top: 10px;
         }
@@ -207,18 +220,8 @@
             height: 100%;
             width: 0%;
             background: var(--primary-color);
-            box-shadow: 0 0 10px var(--primary-color);
-            transition: width 0.1s linear;
-        }
-
-        .data-stream {
-            font-size: 0.8rem;
-            color: var(--success);
-            word-break: break-all;
-            max-height: 60px;
-            overflow: hidden;
-            opacity: 0.7;
-            margin-top: 10px;
+            box-shadow: 0 0 15px var(--primary-color);
+            transition: width 0.05s linear;
         }
 
         .hidden { display: none !important; }
@@ -230,6 +233,9 @@
             font-size: 0.9rem;
             color: var(--text-muted);
             width: 100%;
+            background: rgba(0,0,0,0.3);
+            padding: 10px;
+            border-radius: 4px;
         }
 
         input[type=range] {
@@ -237,27 +243,61 @@
             flex: 1;
             margin-left: 15px;
         }
+
+        /* Preview Area */
+        #preview-area {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            align-items: center;
+            background: rgba(0,0,0,0.5);
+            border: 1px dashed var(--success);
+            padding: 15px;
+            border-radius: 4px;
+        }
+
+        .preview-media {
+            max-width: 100%;
+            max-height: 400px;
+            border: 1px solid var(--text-muted);
+            border-radius: 4px;
+            object-fit: contain;
+        }
+
+        .preview-text {
+            width: 100%;
+            height: 200px;
+            background: #000;
+            color: var(--success);
+            padding: 10px;
+            border: 1px solid var(--text-muted);
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
     </style>
 </head>
 <body>
 
     <header>
         <h1>OPTICAL DATA PROTOCOL</h1>
-        <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 5px;">LOCAL P2P VISUAL TRANSMISSION SYSTEM</div>
+        <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 5px;">HIGH-BANDWIDTH P2P VISUAL TRANSMISSION</div>
     </header>
 
     <div class="container">
         <div class="mode-selector">
-            <button class="btn active" onclick="setMode('send')">Send</button>
-            <button class="btn" onclick="setMode('receive')">Receive</button>
+            <button class="btn active" onclick="setMode('send')">SEND</button>
+            <button class="btn" onclick="setMode('receive')">RECEIVE</button>
         </div>
 
         <!-- SEND PANEL -->
         <div id="panel-send" class="panel active">
             <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
-                <div style="font-size: 2rem; margin-bottom: 10px; color: var(--primary-color);">[+]</div>
-                <div>CLICK OR DRAG ANY FILE HERE TO ENCODE</div>
-                <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 10px;">Supports all formats. Limit: ~5MB (Higher sizes will take several minutes to broadcast)</div>
+                <div style="font-size: 2.5rem; margin-bottom: 10px; color: var(--primary-color);">[+]</div>
+                <div>CLICK OR DRAG ANY FILE HERE</div>
+                <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 10px;">Maximized throughput enabled. Supports unlimited file sizes.</div>
             </div>
             <input type="file" id="file-input" onchange="handleFileSelect(event)">
 
@@ -265,13 +305,13 @@
                 <canvas id="tx-canvas"></canvas>
                 
                 <div class="settings">
-                    <label style="white-space: nowrap;">Speed (FPS): <span id="fps-val">10</span></label>
-                    <input type="range" id="fps-slider" min="1" max="30" value="10" oninput="document.getElementById('fps-val').innerText = this.value; updateInterval();">
+                    <label style="white-space: nowrap;">Speed: <span id="fps-val">20</span> FPS</label>
+                    <input type="range" id="fps-slider" min="1" max="60" value="20" oninput="document.getElementById('fps-val').innerText = this.value; updateInterval();">
                 </div>
 
                 <div class="status-box">
-                    <div style="color: var(--primary-color);" id="tx-status-text">[TX_STATUS]: PROCESSING FILE...</div>
-                    <div id="tx-file-info">File: ...</div>
+                    <div style="color: var(--primary-color); font-weight: bold;" id="tx-status-text">[TX_STATUS]: PROCESSING FILE...</div>
+                    <div id="tx-file-info" style="margin-top: 5px;">File: ...</div>
                     <div id="tx-frame-info">Frame: 0 / 0</div>
                     <div class="progress-container">
                         <div class="progress-bar" id="tx-progress"></div>
@@ -284,35 +324,43 @@
 
         <!-- RECEIVE PANEL -->
         <div id="panel-receive" class="panel">
-            <div class="video-container">
+            <div class="video-container" id="scanner-container">
                 <video id="video" playsinline></video>
                 <div class="scan-line"></div>
                 <canvas id="rx-canvas" class="hidden"></canvas>
             </div>
 
             <div class="status-box">
-                <div style="color: var(--primary-color);" id="rx-status">[RX_STATUS]: WAITING FOR OPTICAL SIGNAL...</div>
-                <div id="rx-file-info">Target: Unknown</div>
+                <div style="color: var(--primary-color); font-weight: bold;" id="rx-status">[RX_STATUS]: SCANNING FOR OPTICAL SIGNAL...</div>
+                <div id="rx-file-info" style="margin-top: 5px;">Target: Unknown</div>
                 <div id="rx-frame-info">Frames Recovered: 0 / ?</div>
                 <div class="progress-container">
                     <div class="progress-bar" id="rx-progress"></div>
                 </div>
-                <div class="data-stream" id="rx-stream"></div>
             </div>
 
-            <button id="btn-download" class="btn hidden" style="background: var(--success); color: var(--bg-color); border-color: var(--success); font-weight: bold;">
-                DECODE & DOWNLOAD FILE
-            </button>
+            <!-- Download / Preview Area -->
+            <div id="preview-area" class="hidden">
+                <div style="color: var(--success); font-weight: bold;">PAYLOAD DECODED SUCCESSFULLY</div>
+                <div id="preview-content" style="width: 100%; text-align: center;"></div>
+                
+                <div style="display: flex; gap: 10px; width: 100%;">
+                    <button id="btn-download" class="btn action-btn" style="flex: 1;">DOWNLOAD FILE</button>
+                    <button id="btn-reset-rx" class="btn" onclick="setMode('receive')" style="flex: 1; border-color: var(--text-muted); color: var(--text-muted);">SCAN NEW FILE</button>
+                </div>
+            </div>
         </div>
     </div>
 
     <script>
-        // === APP STATE ===
-        const CHUNK_SIZE = 400; // Bytes per frame. 400 is a sweet spot for high-density fast scanning.
+        // === APP STATE & CONSTANTS ===
+        // 1000 characters per frame. Base64 is dense, this is a good upper limit for 'L' correction QR codes readable by webcams.
+        const CHUNK_SIZE = 1000; 
         let txInterval = null;
         let rxAnimation = null;
         let qr = null;
-        let currentFPS = 10;
+        let currentFPS = 20;
+        let finalBlobUrl = null;
         
         // Sender State
         let txChunks = [];
@@ -323,14 +371,13 @@
         let rxChunks = new Map();
         let rxTotalFrames = 0;
         let rxFileId = null;
-        let lastScannedFrame = -1;
 
-        // Initialize QR Generator
+        // Initialize high-res QR Generator
         window.onload = () => {
             qr = new QRious({
                 element: document.getElementById('tx-canvas'),
-                size: 400,
-                level: 'L' // Low error correction = higher data capacity per frame
+                size: 600, // High internal resolution for dense data
+                level: 'L' // Low error correction = maximum data payload
             });
         };
 
@@ -353,25 +400,16 @@
 
         // === TRANSMITTER (SEND) LOGIC ===
         
-        // Drag and Drop Handling
         const dropZone = document.getElementById('drop-zone');
-        dropZone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            dropZone.classList.add('dragover');
-        });
+        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
         dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
         dropZone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            dropZone.classList.remove('dragover');
-            if (e.dataTransfer.files.length > 0) {
-                processFile(e.dataTransfer.files[0]);
-            }
+            e.preventDefault(); dropZone.classList.remove('dragover');
+            if (e.dataTransfer.files.length > 0) processFile(e.dataTransfer.files[0]);
         });
 
         function handleFileSelect(event) {
-            if (event.target.files.length > 0) {
-                processFile(event.target.files[0]);
-            }
+            if (event.target.files.length > 0) processFile(event.target.files[0]);
         }
 
         function cancelSend() {
@@ -384,49 +422,48 @@
         function processFile(file) {
             document.getElementById('drop-zone').classList.add('hidden');
             document.getElementById('tx-ui').classList.remove('hidden');
-            document.getElementById('tx-status-text').innerText = "[TX_STATUS]: PROCESSING FILE...";
+            document.getElementById('tx-status-text').innerText = "[TX_STATUS]: ENCODING DATA... PLEASE WAIT";
             document.getElementById('tx-file-info').innerText = `File: ${file.name} (${(file.size/1024/1024).toFixed(2)} MB)`;
             
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const dataUrl = e.target.result;
-                
-                // Extract MIME type and Base64 string from data URL
-                let mimeType = file.type || 'application/octet-stream';
-                let base64Data = '';
-                
-                const match = dataUrl.match(/^data:(.*);base64,(.*)$/);
-                if (match) {
-                    mimeType = match[1];
-                    base64Data = match[2];
-                } else {
-                    base64Data = dataUrl.split(',')[1];
-                }
-                
-                const fileId = Math.random().toString(36).substring(2, 8).toUpperCase();
-                txChunks = [];
-                
-                // Chunk the base64 data
-                for (let i = 0; i < base64Data.length; i += CHUNK_SIZE) {
-                    txChunks.push(base64Data.substring(i, i + CHUNK_SIZE));
-                }
-                
-                const totalFrames = txChunks.length;
-                
-                // Format: D|fileID|index|totalFrames|data
-                txChunks = txChunks.map((chunk, index) => 
-                    `D|${fileId}|${index}|${totalFrames}|${chunk}`
-                );
+            // Use setTimeout to allow UI to update before heavy blocking thread
+            setTimeout(() => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const dataUrl = e.target.result;
+                    
+                    let mimeType = file.type || 'application/octet-stream';
+                    let base64Data = '';
+                    
+                    const match = dataUrl.match(/^data:(.*);base64,(.*)$/);
+                    if (match) {
+                        mimeType = match[1];
+                        base64Data = match[2];
+                    } else {
+                        base64Data = dataUrl.split(',')[1];
+                    }
+                    
+                    const fileId = Math.random().toString(36).substring(2, 8).toUpperCase();
+                    txChunks = [];
+                    
+                    // Chunk the base64 data into heavily packed frames
+                    for (let i = 0; i < base64Data.length; i += CHUNK_SIZE) {
+                        txChunks.push(base64Data.substring(i, i + CHUNK_SIZE));
+                    }
+                    
+                    const totalFrames = txChunks.length;
+                    
+                    // Format: D|fileID|index|totalFrames|data
+                    txChunks = txChunks.map((chunk, index) => `D|${fileId}|${index}|${totalFrames}|${chunk}`);
 
-                // Prepend Metadata Frame
-                // Format: M|fileID|totalFrames|fileName|fileType
-                const metaFrame = `M|${fileId}|${totalFrames}|${file.name}|${mimeType}`;
-                txChunks.unshift(metaFrame);
+                    // Prepend Metadata Frame
+                    const metaFrame = `M|${fileId}|${totalFrames}|${file.name}|${mimeType}`;
+                    txChunks.unshift(metaFrame);
 
-                document.getElementById('tx-status-text').innerText = "[TX_STATUS]: BROADCASTING";
-                startBroadcast();
-            };
-            reader.readAsDataURL(file);
+                    document.getElementById('tx-status-text').innerText = "[TX_STATUS]: BROADCASTING OPTICAL SIGNAL";
+                    startBroadcast();
+                };
+                reader.readAsDataURL(file);
+            }, 100);
         }
 
         function updateInterval() {
@@ -441,18 +478,16 @@
             txInterval = setInterval(() => {
                 const frameData = txChunks[txCurrentFrame];
                 
-                // Update QR code visually
                 qr.value = frameData;
 
-                // Update UI text
                 const isMeta = frameData.startsWith('M');
                 document.getElementById('tx-frame-info').innerText = isMeta ? 
-                    `Broadcasting: METADATA HEADER` : 
+                    `Broadcasting: HEADER METADATA` : 
                     `Broadcasting Frame: ${txCurrentFrame} / ${txChunks.length - 1}`;
                 
                 document.getElementById('tx-progress').style.width = `${(txCurrentFrame / (txChunks.length - 1)) * 100}%`;
 
-                // Loop sequence for automatic error correction via repetition
+                // Auto-loop for redundant error correction
                 txCurrentFrame++;
                 if (txCurrentFrame >= txChunks.length) {
                     txCurrentFrame = 0; 
@@ -463,6 +498,7 @@
         function startBroadcast() {
             if (txInterval) clearInterval(txInterval);
             txCurrentFrame = 0;
+            currentFPS = parseInt(document.getElementById('fps-slider').value, 10);
             startTick();
         }
 
@@ -473,17 +509,19 @@
         const rxCtx = rxCanvas.getContext('2d', { willReadFrequently: true });
 
         function startCamera() {
-            navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
-                .then(function(stream) {
-                    video.srcObject = stream;
-                    video.setAttribute("playsinline", true);
-                    video.play();
-                    rxAnimation = requestAnimationFrame(scanVideo);
-                })
-                .catch(function(err) {
-                    document.getElementById('rx-status').innerText = "[ERROR]: Camera access denied or unavailable.";
-                    document.getElementById('rx-status').style.color = "var(--danger)";
-                });
+            navigator.mediaDevices.getUserMedia({ 
+                video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } } 
+            })
+            .then(function(stream) {
+                video.srcObject = stream;
+                video.setAttribute("playsinline", true);
+                video.play();
+                rxAnimation = requestAnimationFrame(scanVideo);
+            })
+            .catch(function(err) {
+                document.getElementById('rx-status').innerText = "[ERROR]: Camera access denied or unavailable.";
+                document.getElementById('rx-status').style.color = "var(--danger)";
+            });
         }
 
         function stopCamera() {
@@ -494,17 +532,23 @@
         }
 
         function resetReceiver() {
+            if (finalBlobUrl) {
+                URL.revokeObjectURL(finalBlobUrl);
+                finalBlobUrl = null;
+            }
             rxFileMeta = null;
             rxChunks.clear();
             rxTotalFrames = 0;
             rxFileId = null;
-            lastScannedFrame = -1;
+            
+            document.getElementById('scanner-container').classList.remove('hidden');
+            document.getElementById('preview-area').classList.add('hidden');
+            document.getElementById('preview-content').innerHTML = '';
+            
             document.getElementById('rx-file-info').innerText = "Target: Unknown";
             document.getElementById('rx-frame-info').innerText = "Frames Recovered: 0 / ?";
             document.getElementById('rx-progress').style.width = "0%";
-            document.getElementById('rx-stream').innerText = "";
-            document.getElementById('btn-download').classList.add('hidden');
-            document.getElementById('rx-status').innerText = "[RX_STATUS]: WAITING FOR OPTICAL SIGNAL...";
+            document.getElementById('rx-status').innerText = "[RX_STATUS]: SCANNING FOR OPTICAL SIGNAL...";
             document.getElementById('rx-status').style.color = "var(--primary-color)";
         }
 
@@ -515,9 +559,10 @@
                 rxCtx.drawImage(video, 0, 0, rxCanvas.width, rxCanvas.height);
                 
                 const imageData = rxCtx.getImageData(0, 0, rxCanvas.width, rxCanvas.height);
-                // jsQR scan
+                
+                // dontInvert speeds up scanning. We use high-contrast black/white QRs anyway.
                 const code = jsQR(imageData.data, imageData.width, imageData.height, {
-                    inversionAttempts: "dontInvert", // Keep false for faster continuous scanning
+                    inversionAttempts: "dontInvert", 
                 });
 
                 if (code && code.data) {
@@ -534,29 +579,23 @@
             const type = parts[0];
             const incomingFileId = parts[1];
 
-            // If we detect a new file broadcast, reset the current progress
             if (rxFileId !== null && incomingFileId !== rxFileId) {
                 resetReceiver();
             }
             rxFileId = incomingFileId;
 
             if (type === 'M') {
-                // M|fileID|totalFrames|fileName|fileType
                 rxTotalFrames = parseInt(parts[2], 10);
                 rxFileMeta = { name: parts[3], type: parts[4] };
                 document.getElementById('rx-file-info').innerText = `Target: ${rxFileMeta.name} (${rxTotalFrames} frames)`;
             } 
             else if (type === 'D') {
-                // D|fileID|index|totalFrames|data
                 const index = parseInt(parts[2], 10);
                 rxTotalFrames = parseInt(parts[3], 10); 
-                
-                // Recombine remaining parts in case the base64 string naturally contains a pipe '|' character
                 const chunkData = parts.slice(4).join('|'); 
 
                 if (!rxChunks.has(index)) {
                     rxChunks.set(index, chunkData);
-                    document.getElementById('rx-stream').innerText = `SAVED FRAME: ${index} \n ${chunkData.substring(0, 50)}...`;
                 }
             }
 
@@ -572,35 +611,107 @@
             if (rxTotalFrames > 0) {
                 const pct = (current / rxTotalFrames) * 100;
                 document.getElementById('rx-progress').style.width = `${pct}%`;
-                document.getElementById('rx-status').innerText = "[RX_STATUS]: SYNC ACQUIRED. DOWNLOADING...";
-                document.getElementById('rx-status').style.color = "var(--success)";
+                document.getElementById('rx-status').innerText = "[RX_STATUS]: RECEIVING AND DECODING DATA...";
+                document.getElementById('rx-status').style.color = "var(--primary-color)";
             }
         }
 
         function checkCompletion() {
             if (rxTotalFrames > 0 && rxChunks.size === rxTotalFrames) {
-                document.getElementById('rx-status').innerText = "[RX_STATUS]: PAYLOAD SECURED. INTEGRITY VERIFIED.";
-                document.getElementById('btn-download').classList.remove('hidden');
-                
-                // Stop scanning to save battery/cpu
+                document.getElementById('rx-status').innerText = "[RX_STATUS]: COMPILING PAYLOAD...";
+                document.getElementById('rx-status').style.color = "var(--success)";
                 stopCamera();
+                
+                // Allow UI to render the 100% bar before freezing the thread to compile
+                setTimeout(compileAndPreview, 100);
             }
         }
 
-        // Decode and trigger the browser download
-        document.getElementById('btn-download').addEventListener('click', () => {
+        // Convert base64 chunks to true binary Blob to prevent memory crash
+        function base64ToBlob(base64, mimeType) {
+            const byteChars = atob(base64);
+            const byteArrays = [];
+            
+            for (let offset = 0; offset < byteChars.length; offset += 1024) {
+                const slice = byteChars.slice(offset, offset + 1024);
+                const byteNumbers = new Array(slice.length);
+                for (let i = 0; i < slice.length; i++) {
+                    byteNumbers[i] = slice.charCodeAt(i);
+                }
+                const byteArray = new Uint8Array(byteNumbers);
+                byteArrays.push(byteArray);
+            }
+            return new Blob(byteArrays, { type: mimeType });
+        }
+
+        function compileAndPreview() {
+            document.getElementById('scanner-container').classList.add('hidden');
+            
+            // 1. Reassemble Base64 String
             let fullBase64 = "";
             for (let i = 0; i < rxTotalFrames; i++) {
                 fullBase64 += rxChunks.get(i);
             }
 
+            // 2. Generate Binary Blob
             const mimeType = rxFileMeta ? rxFileMeta.type : "application/octet-stream";
-            const fileName = rxFileMeta ? rxFileMeta.name : "recovered_file.bin";
-            const dataUrl = `data:${mimeType};base64,${fullBase64}`;
+            const blob = base64ToBlob(fullBase64, mimeType);
+            finalBlobUrl = URL.createObjectURL(blob);
 
-            // Create invisible link to force download
+            // 3. Setup Preview Logic
+            const previewBox = document.getElementById('preview-content');
+            previewBox.innerHTML = ''; // clear old
+
+            // Images
+            if (mimeType.startsWith('image/')) {
+                const img = document.createElement('img');
+                img.src = finalBlobUrl;
+                img.className = 'preview-media';
+                previewBox.appendChild(img);
+            } 
+            // Videos
+            else if (mimeType.startsWith('video/')) {
+                const vid = document.createElement('video');
+                vid.src = finalBlobUrl;
+                vid.controls = true;
+                vid.className = 'preview-media';
+                previewBox.appendChild(vid);
+            } 
+            // Audio
+            else if (mimeType.startsWith('audio/')) {
+                const aud = document.createElement('audio');
+                aud.src = finalBlobUrl;
+                aud.controls = true;
+                aud.style.width = '100%';
+                previewBox.appendChild(aud);
+            }
+            // Text files
+            else if (mimeType === 'text/plain') {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const txt = document.createElement('div');
+                    txt.className = 'preview-text';
+                    txt.innerText = e.target.result;
+                    previewBox.appendChild(txt);
+                };
+                reader.readAsText(blob);
+            } 
+            // HTML / Executables / Other (Force download only for security/formatting)
+            else {
+                previewBox.innerHTML = `<div style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 15px;">
+                    [PREVIEW NOT AVAILABLE FOR THIS FORMAT]<br>File is ready for download.
+                </div>`;
+            }
+
+            document.getElementById('preview-area').classList.remove('hidden');
+        }
+
+        // Trigger Download
+        document.getElementById('btn-download').addEventListener('click', () => {
+            if (!finalBlobUrl) return;
+            const fileName = rxFileMeta ? rxFileMeta.name : "recovered_file.bin";
             const a = document.createElement('a');
-            a.href = dataUrl;
+            a.href = finalBlobUrl;
             a.download = fileName;
             document.body.appendChild(a);
             a.click();
