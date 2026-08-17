@@ -3,10 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Optical Data Transfer Protocol</title>
+    <title>Optical Data Transfer</title>
     
-    <!-- External Libraries for QR Generation and Scanning -->
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <!-- External Libraries -->
+    <!-- QRious for fast, reliable QR generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+    <!-- jsQR for reading the QR stream -->
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
 
     <style>
@@ -145,6 +147,8 @@
             box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
             max-width: 100%;
             height: auto;
+            width: 350px;
+            height: 350px;
         }
 
         /* Receive Panel Specifics */
@@ -187,6 +191,7 @@
             padding: 15px;
             font-size: 0.9rem;
             line-height: 1.5;
+            width: 100%;
         }
 
         .progress-container {
@@ -213,6 +218,7 @@
             max-height: 60px;
             overflow: hidden;
             opacity: 0.7;
+            margin-top: 10px;
         }
 
         .hidden { display: none !important; }
@@ -223,10 +229,13 @@
             align-items: center;
             font-size: 0.9rem;
             color: var(--text-muted);
+            width: 100%;
         }
 
         input[type=range] {
             accent-color: var(--primary-color);
+            flex: 1;
+            margin-left: 15px;
         }
     </style>
 </head>
@@ -239,35 +248,37 @@
 
     <div class="container">
         <div class="mode-selector">
-            <button class="btn active" onclick="setMode('send')">Transmit (Tx)</button>
-            <button class="btn" onclick="setMode('receive')">Receive (Rx)</button>
+            <button class="btn active" onclick="setMode('send')">Send</button>
+            <button class="btn" onclick="setMode('receive')">Receive</button>
         </div>
 
         <!-- SEND PANEL -->
         <div id="panel-send" class="panel active">
             <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
                 <div style="font-size: 2rem; margin-bottom: 10px; color: var(--primary-color);">[+]</div>
-                <div>CLICK OR DRAG FILE HERE TO ENCODE</div>
-                <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 10px;">Max recommended size: 50KB</div>
+                <div>CLICK OR DRAG ANY FILE HERE TO ENCODE</div>
+                <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 10px;">Supports all formats. Limit: ~5MB (Higher sizes will take several minutes to broadcast)</div>
             </div>
             <input type="file" id="file-input" onchange="handleFileSelect(event)">
 
             <div id="tx-ui" class="hidden transfer-display">
                 <canvas id="tx-canvas"></canvas>
                 
-                <div class="settings" style="width: 100%;">
-                    <label>Baud Rate (FPS): <span id="fps-val">8</span></label>
-                    <input type="range" id="fps-slider" min="1" max="15" value="8" oninput="document.getElementById('fps-val').innerText = this.value">
+                <div class="settings">
+                    <label style="white-space: nowrap;">Speed (FPS): <span id="fps-val">10</span></label>
+                    <input type="range" id="fps-slider" min="1" max="30" value="10" oninput="document.getElementById('fps-val').innerText = this.value; updateInterval();">
                 </div>
 
-                <div class="status-box" style="width: 100%;">
-                    <div style="color: var(--primary-color);">[TX_STATUS]: BROADCASTING</div>
+                <div class="status-box">
+                    <div style="color: var(--primary-color);" id="tx-status-text">[TX_STATUS]: PROCESSING FILE...</div>
                     <div id="tx-file-info">File: ...</div>
                     <div id="tx-frame-info">Frame: 0 / 0</div>
                     <div class="progress-container">
                         <div class="progress-bar" id="tx-progress"></div>
                     </div>
                 </div>
+                
+                <button class="btn" onclick="cancelSend()" style="width: 100%; font-size: 0.9rem; border-color: var(--danger); color: var(--danger);">Stop Broadcast & Select New File</button>
             </div>
         </div>
 
@@ -289,17 +300,19 @@
                 <div class="data-stream" id="rx-stream"></div>
             </div>
 
-            <button id="btn-download" class="btn hidden" style="background: var(--success); color: var(--bg-color); border-color: var(--success);">
-                DECODE & DOWNLOAD PAYLOAD
+            <button id="btn-download" class="btn hidden" style="background: var(--success); color: var(--bg-color); border-color: var(--success); font-weight: bold;">
+                DECODE & DOWNLOAD FILE
             </button>
         </div>
     </div>
 
     <script>
         // === APP STATE ===
-        const CHUNK_SIZE = 150; // Characters per frame. Keep low for scanning reliability
+        const CHUNK_SIZE = 400; // Bytes per frame. 400 is a sweet spot for high-density fast scanning.
         let txInterval = null;
         let rxAnimation = null;
+        let qr = null;
+        let currentFPS = 10;
         
         // Sender State
         let txChunks = [];
@@ -310,6 +323,16 @@
         let rxChunks = new Map();
         let rxTotalFrames = 0;
         let rxFileId = null;
+        let lastScannedFrame = -1;
+
+        // Initialize QR Generator
+        window.onload = () => {
+            qr = new QRious({
+                element: document.getElementById('tx-canvas'),
+                size: 400,
+                level: 'L' // Low error correction = higher data capacity per frame
+            });
+        };
 
         // === UI NAVIGATION ===
         function setMode(mode) {
@@ -330,7 +353,7 @@
 
         // === TRANSMITTER (SEND) LOGIC ===
         
-        // Drag and Drop
+        // Drag and Drop Handling
         const dropZone = document.getElementById('drop-zone');
         dropZone.addEventListener('dragover', (e) => {
             e.preventDefault();
@@ -351,21 +374,36 @@
             }
         }
 
-        function generateFileId() {
-            return Math.random().toString(36).substring(2, 8).toUpperCase();
+        function cancelSend() {
+            if(txInterval) clearInterval(txInterval);
+            document.getElementById('tx-ui').classList.add('hidden');
+            document.getElementById('drop-zone').classList.remove('hidden');
+            document.getElementById('file-input').value = "";
         }
 
         function processFile(file) {
             document.getElementById('drop-zone').classList.add('hidden');
             document.getElementById('tx-ui').classList.remove('hidden');
+            document.getElementById('tx-status-text').innerText = "[TX_STATUS]: PROCESSING FILE...";
+            document.getElementById('tx-file-info').innerText = `File: ${file.name} (${(file.size/1024/1024).toFixed(2)} MB)`;
             
             const reader = new FileReader();
             reader.onload = (e) => {
-                // Get Base64 data (strip the data:MIME;base64, part)
                 const dataUrl = e.target.result;
-                const base64Data = dataUrl.split(',')[1];
                 
-                const fileId = generateFileId();
+                // Extract MIME type and Base64 string from data URL
+                let mimeType = file.type || 'application/octet-stream';
+                let base64Data = '';
+                
+                const match = dataUrl.match(/^data:(.*);base64,(.*)$/);
+                if (match) {
+                    mimeType = match[1];
+                    base64Data = match[2];
+                } else {
+                    base64Data = dataUrl.split(',')[1];
+                }
+                
+                const fileId = Math.random().toString(36).substring(2, 8).toUpperCase();
                 txChunks = [];
                 
                 // Chunk the base64 data
@@ -380,40 +418,33 @@
                     `D|${fileId}|${index}|${totalFrames}|${chunk}`
                 );
 
-                // Add Metadata Frame at the beginning and intermittently
+                // Prepend Metadata Frame
                 // Format: M|fileID|totalFrames|fileName|fileType
-                const metaFrame = `M|${fileId}|${totalFrames}|${file.name}|${file.type}`;
-                txChunks.unshift(metaFrame); // Frame 0 is meta
+                const metaFrame = `M|${fileId}|${totalFrames}|${file.name}|${mimeType}`;
+                txChunks.unshift(metaFrame);
 
-                document.getElementById('tx-file-info').innerText = `File: ${file.name} (${(file.size/1024).toFixed(2)} KB)`;
-                
+                document.getElementById('tx-status-text').innerText = "[TX_STATUS]: BROADCASTING";
                 startBroadcast();
             };
             reader.readAsDataURL(file);
         }
 
-        function startBroadcast() {
-            if (txInterval) clearInterval(txInterval);
-            txCurrentFrame = 0;
-            
-            const canvas = document.getElementById('tx-canvas');
-            const fpsSlider = document.getElementById('fps-slider');
-            
-            const tick = () => {
-                const fps = parseInt(fpsSlider.value, 10);
+        function updateInterval() {
+            currentFPS = parseInt(document.getElementById('fps-slider').value, 10);
+            if (txInterval) {
+                clearInterval(txInterval);
+                startTick();
+            }
+        }
+
+        function startTick() {
+            txInterval = setInterval(() => {
                 const frameData = txChunks[txCurrentFrame];
                 
-                // Generate QR Code onto canvas
-                QRCode.toCanvas(canvas, frameData, {
-                    width: 350,
-                    margin: 2,
-                    color: { dark: '#000000', light: '#ffffff' },
-                    errorCorrectionLevel: 'L'
-                }, (error) => {
-                    if (error) console.error(error);
-                });
+                // Update QR code visually
+                qr.value = frameData;
 
-                // Update UI
+                // Update UI text
                 const isMeta = frameData.startsWith('M');
                 document.getElementById('tx-frame-info').innerText = isMeta ? 
                     `Broadcasting: METADATA HEADER` : 
@@ -421,16 +452,18 @@
                 
                 document.getElementById('tx-progress').style.width = `${(txCurrentFrame / (txChunks.length - 1)) * 100}%`;
 
-                // Loop
+                // Loop sequence for automatic error correction via repetition
                 txCurrentFrame++;
                 if (txCurrentFrame >= txChunks.length) {
-                    txCurrentFrame = 0; // Cyclic broadcast (Error correction by repetition)
+                    txCurrentFrame = 0; 
                 }
+            }, 1000 / currentFPS);
+        }
 
-                txInterval = setTimeout(tick, 1000 / fps);
-            };
-            
-            tick();
+        function startBroadcast() {
+            if (txInterval) clearInterval(txInterval);
+            txCurrentFrame = 0;
+            startTick();
         }
 
         // === RECEIVER (RX) LOGIC ===
@@ -465,6 +498,7 @@
             rxChunks.clear();
             rxTotalFrames = 0;
             rxFileId = null;
+            lastScannedFrame = -1;
             document.getElementById('rx-file-info').innerText = "Target: Unknown";
             document.getElementById('rx-frame-info').innerText = "Frames Recovered: 0 / ?";
             document.getElementById('rx-progress').style.width = "0%";
@@ -481,11 +515,12 @@
                 rxCtx.drawImage(video, 0, 0, rxCanvas.width, rxCanvas.height);
                 
                 const imageData = rxCtx.getImageData(0, 0, rxCanvas.width, rxCanvas.height);
+                // jsQR scan
                 const code = jsQR(imageData.data, imageData.width, imageData.height, {
-                    inversionAttempts: "dontInvert",
+                    inversionAttempts: "dontInvert", // Keep false for faster continuous scanning
                 });
 
-                if (code) {
+                if (code && code.data) {
                     processReceivedData(code.data);
                 }
             }
@@ -493,17 +528,14 @@
         }
 
         function processReceivedData(dataString) {
-            document.getElementById('rx-stream').innerText = dataString;
-            
             const parts = dataString.split('|');
             if (parts.length < 4) return;
 
             const type = parts[0];
             const incomingFileId = parts[1];
 
-            // Handle new incoming file stream
+            // If we detect a new file broadcast, reset the current progress
             if (rxFileId !== null && incomingFileId !== rxFileId) {
-                // A new file started broadcasting while we were listening
                 resetReceiver();
             }
             rxFileId = incomingFileId;
@@ -517,11 +549,14 @@
             else if (type === 'D') {
                 // D|fileID|index|totalFrames|data
                 const index = parseInt(parts[2], 10);
-                rxTotalFrames = parseInt(parts[3], 10); // Infer total if meta missed
-                const chunkData = parts.slice(4).join('|'); // recombine in case data had '|'
+                rxTotalFrames = parseInt(parts[3], 10); 
+                
+                // Recombine remaining parts in case the base64 string naturally contains a pipe '|' character
+                const chunkData = parts.slice(4).join('|'); 
 
                 if (!rxChunks.has(index)) {
                     rxChunks.set(index, chunkData);
+                    document.getElementById('rx-stream').innerText = `SAVED FRAME: ${index} \n ${chunkData.substring(0, 50)}...`;
                 }
             }
 
@@ -547,26 +582,23 @@
                 document.getElementById('rx-status').innerText = "[RX_STATUS]: PAYLOAD SECURED. INTEGRITY VERIFIED.";
                 document.getElementById('btn-download').classList.remove('hidden');
                 
-                // Stop scanning to save battery
+                // Stop scanning to save battery/cpu
                 stopCamera();
             }
         }
 
-        // Download Reassembled File
+        // Decode and trigger the browser download
         document.getElementById('btn-download').addEventListener('click', () => {
-            // Reassemble Base64 string
             let fullBase64 = "";
             for (let i = 0; i < rxTotalFrames; i++) {
                 fullBase64 += rxChunks.get(i);
             }
 
-            // Fallback for missing metadata
             const mimeType = rxFileMeta ? rxFileMeta.type : "application/octet-stream";
             const fileName = rxFileMeta ? rxFileMeta.name : "recovered_file.bin";
-
             const dataUrl = `data:${mimeType};base64,${fullBase64}`;
 
-            // Create download link
+            // Create invisible link to force download
             const a = document.createElement('a');
             a.href = dataUrl;
             a.download = fileName;
