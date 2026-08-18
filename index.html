@@ -2,27 +2,31 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Optical File Transfer</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>QR Drop</title>
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <!-- External Libraries -->
-    <!-- QRious for high-speed QR generation -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
-    <!-- jsQR for reading the QR stream -->
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
 
     <style>
         :root {
-            --bg-color: #f4f6f9;
+            --bg-color: #f3f4f6;
             --card-bg: #ffffff;
-            --primary: #0d6efd;
-            --primary-hover: #0b5ed7;
-            --text-main: #212529;
-            --text-muted: #6c757d;
-            --border-color: #dee2e6;
-            --success: #198754;
-            --danger: #dc3545;
-            --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            --primary: #4F46E5;
+            --primary-hover: #4338CA;
+            --primary-light: #818cf8;
+            --secondary: #6B7280;
+            --secondary-hover: #4B5563;
+            --text-main: #111827;
+            --text-muted: #6B7280;
+            --border-color: #E5E7EB;
+            --success: #10B981;
+            --danger: #EF4444;
+            --font-family: 'Inter', sans-serif;
         }
 
         * {
@@ -39,45 +43,49 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+            padding: 20px;
         }
 
         header {
             width: 100%;
-            padding: 20px;
-            background-color: var(--card-bg);
-            border-bottom: 1px solid var(--border-color);
             text-align: center;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            margin-bottom: 24px;
+            margin-top: 10px;
         }
 
         h1 {
-            font-size: 1.5rem;
+            font-size: 2.75rem; /* Made bigger */
             color: var(--primary);
-            font-weight: 600;
+            font-weight: 800;
+            letter-spacing: -0.04em;
+            line-height: 1.1;
         }
 
         p.subtitle {
-            font-size: 0.9rem;
+            font-size: 0.95rem;
             color: var(--text-muted);
-            margin-top: 5px;
+            margin-top: 8px;
         }
 
         .container {
             width: 100%;
-            max-width: 700px;
-            padding: 20px;
+            max-width: 500px; /* Slimmer for an app-like feel */
+            background: var(--card-bg);
+            border-radius: 20px;
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05), 0 8px 10px -6px rgba(0,0,0,0.01);
+            padding: 24px;
             display: flex;
             flex-direction: column;
             gap: 20px;
-            flex: 1;
         }
 
+        /* Modern Tabs - Segmented Control Style */
         .tabs {
             display: flex;
-            background: var(--border-color);
-            border-radius: 8px;
-            overflow: hidden;
+            background: #F3F4F6;
+            border-radius: 12px;
             padding: 4px;
+            width: 100%;
         }
 
         .tab-btn {
@@ -85,189 +93,214 @@
             background: transparent;
             border: none;
             padding: 12px;
-            font-size: 1rem;
+            font-size: 0.95rem;
             font-weight: 600;
             color: var(--text-muted);
             cursor: pointer;
-            border-radius: 6px;
-            transition: background 0.2s;
+            border-radius: 10px;
         }
 
         .tab-btn.active {
             background: var(--card-bg);
-            color: var(--primary);
+            color: var(--text-main);
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
 
+        /* Panels */
         .panel {
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 25px;
             display: none;
             flex-direction: column;
             gap: 20px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
         }
 
+        /* Removed fade animation for instant switching */
         .panel.active {
             display: flex;
         }
 
-        /* Forms & Buttons */
+        /* Buttons */
         .btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
             background: var(--primary);
             color: white;
             border: none;
-            padding: 12px 20px;
+            padding: 14px 20px;
             font-size: 1rem;
-            border-radius: 6px;
+            border-radius: 12px;
             cursor: pointer;
-            font-weight: 500;
-            transition: background 0.2s;
+            font-weight: 600;
             width: 100%;
         }
 
-        .btn:hover { background: var(--primary-hover); }
-        .btn-danger { background: white; color: var(--danger); border: 1px solid var(--danger); }
-        .btn-danger:hover { background: var(--danger); color: white; }
+        .btn:active { transform: scale(0.98); }
+        .btn-secondary { background: #F3F4F6; color: var(--text-main); }
+        .btn-secondary:active { background: #E5E7EB; }
+        .btn-danger { background: #FEF2F2; color: var(--danger); border: 1px solid #FCA5A5; }
         .btn-success { background: var(--success); }
-        .btn-success:hover { background: #146c43; }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+        }
 
         /* Drop Zone */
         .drop-zone {
-            border: 2px dashed var(--primary);
-            border-radius: 8px;
+            border: 2px dashed #CBD5E1;
+            border-radius: 16px;
             padding: 50px 20px;
             text-align: center;
             cursor: pointer;
-            background: #f8faff;
-            transition: background 0.2s;
+            background: #F8FAFC;
         }
 
-        .drop-zone:hover, .drop-zone.dragover { background: #e9f0ff; }
-        .drop-zone-icon { font-size: 3rem; color: var(--primary); margin-bottom: 10px; }
+        .drop-zone.dragover { background: #EFF6FF; border-color: var(--primary); }
         
+        .drop-zone-icon { font-size: 3.5rem; margin-bottom: 12px; }
+        .drop-zone h3 { font-size: 1.1rem; color: var(--text-main); }
         #file-input { display: none; }
 
-        /* Display Elements */
+        /* Media Displays */
         .qr-container {
             display: flex;
             justify-content: center;
             padding: 10px;
             background: #fff;
-            border-radius: 8px;
+            border-radius: 16px;
             border: 1px solid var(--border-color);
         }
 
         #tx-canvas {
             width: 100%;
-            max-width: 400px;
+            max-width: 320px;
             height: auto;
         }
 
         .video-container {
             width: 100%;
-            max-width: 450px;
-            margin: 0 auto;
-            border-radius: 8px;
+            aspect-ratio: 4/3;
+            border-radius: 16px;
             overflow: hidden;
             background: #000;
             position: relative;
-            border: 1px solid var(--border-color);
         }
 
-        #video { width: 100%; display: block; }
+        #video { width: 100%; height: 100%; object-fit: cover; }
 
+        /* Sliders */
         .settings-row {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            background: var(--bg-color);
+            background: #F8FAFC;
             padding: 15px;
-            border-radius: 8px;
-            font-size: 0.9rem;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
         }
-
         input[type=range] { flex: 1; margin: 0 15px; accent-color: var(--primary); }
 
-        /* Info Boxes */
+        /* Modern Info Boxes & Progress Bars */
         .info-box {
-            background: var(--bg-color);
-            padding: 15px;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            line-height: 1.6;
+            background: #F8FAFC;
+            padding: 16px;
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
         }
 
-        .info-title { font-weight: 600; color: var(--primary); margin-bottom: 8px; }
-        .success-text { color: var(--success); font-weight: bold; }
-        .danger-text { color: var(--danger); font-weight: bold; }
+        .info-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
 
-        /* Progress Bar */
+        .info-title { font-weight: 700; color: var(--text-main); font-size: 1rem; }
+        .progress-text { font-weight: 800; color: var(--primary); font-size: 1rem; }
+
+        .file-name { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .frame-info { font-weight: 500; font-size: 0.85rem; font-family: monospace; color: var(--text-muted); }
+
         .progress-wrapper {
             width: 100%;
             height: 10px;
-            background: var(--border-color);
-            border-radius: 5px;
+            background: #E2E8F0;
+            border-radius: 999px;
             overflow: hidden;
-            margin-top: 10px;
+            margin-top: 12px;
         }
 
         .progress-fill {
             height: 100%;
             width: 0%;
-            background: var(--primary);
-            transition: width 0.1s linear;
+            background: linear-gradient(90deg, var(--primary), var(--primary-light));
+            border-radius: 999px;
         }
 
-        /* Preview Area */
+        /* Success & Preview Area */
+        .success-text { color: var(--success); font-weight: 800; text-align: center; font-size: 1.5rem; margin-bottom: 10px; }
+        
         #preview-area {
             display: flex;
             flex-direction: column;
             gap: 15px;
             align-items: center;
-            padding: 15px;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
         }
 
-        .preview-media { max-width: 100%; max-height: 300px; border-radius: 6px; }
-        .preview-text {
-            width: 100%;
-            height: 200px;
-            background: var(--bg-color);
-            padding: 15px;
-            border-radius: 6px;
-            font-family: monospace;
-            font-size: 0.85rem;
-            overflow-y: auto;
-            white-space: pre-wrap;
+        .file-summary {
+            background: #F8FAFC;
             border: 1px solid var(--border-color);
+            padding: 24px;
+            border-radius: 16px;
+            width: 100%;
+            text-align: center;
         }
 
         .hidden { display: none !important; }
+
+        /* Responsive Mobile App Feel */
+        @media (max-width: 600px) {
+            body {
+                padding: 0;
+                background: var(--card-bg);
+            }
+            header { margin-top: 30px; margin-bottom: 15px; }
+            .container {
+                max-width: 100%;
+                border-radius: 0;
+                box-shadow: none;
+                padding: 15px;
+                flex-grow: 1;
+            }
+            .info-box { padding: 12px; }
+            .drop-zone { padding: 40px 10px; border-radius: 12px; }
+        }
     </style>
 </head>
 <body>
 
     <header>
-        <h1>Optical File Transfer</h1>
-        <p class="subtitle">Securely send and receive files via your screen and camera</p>
+        <h1>QR Drop</h1>
+        <p class="subtitle">Secure offline file transfer</p>
     </header>
 
     <div class="container">
+        <!-- TABS -->
         <div class="tabs">
-            <button class="tab-btn active" onclick="setMode('send')">Send File</button>
-            <button class="tab-btn" onclick="setMode('receive')">Receive File</button>
+            <button class="tab-btn active" onclick="setMode('send')">Send</button>
+            <button class="tab-btn" onclick="setMode('receive')">Receive</button>
         </div>
 
         <!-- SEND PANEL -->
         <div id="panel-send" class="panel active">
             <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
-                <div class="drop-zone-icon">📁</div>
-                <h3>Click or drag file to upload</h3>
-                <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 5px;">Supports up to 10 MB. All file types accepted.</p>
+                <div class="drop-zone-icon">📄</div>
+                <h3>Tap or drag file to share</h3>
+                <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 8px;">Supports up to 10 MB</p>
             </div>
             <input type="file" id="file-input" onchange="handleFileSelect(event)">
 
@@ -277,20 +310,23 @@
                 </div>
                 
                 <div class="settings-row" style="margin-top: 15px;">
-                    <label style="font-weight: 500;">Speed: <span id="fps-val">15</span> FPS</label>
+                    <label style="font-weight: 600;">Speed: <span id="fps-val">15</span> FPS</label>
                     <input type="range" id="fps-slider" min="5" max="45" value="15" oninput="document.getElementById('fps-val').innerText = this.value; updateInterval();">
                 </div>
 
                 <div class="info-box" style="margin-top: 15px;">
-                    <div class="info-title" id="tx-status">Encoding data...</div>
-                    <div id="tx-file-name">File: ...</div>
-                    <div id="tx-frame-info">Frame: 0 / 0</div>
+                    <div class="info-header">
+                        <span class="info-title" id="tx-status">Encoding data...</span>
+                        <span class="progress-text" id="tx-pct">0%</span>
+                    </div>
+                    <div id="tx-file-name" class="file-name">File: ...</div>
+                    <div id="tx-frame-info" class="frame-info">Frame: 0 / 0</div>
                     <div class="progress-wrapper">
                         <div class="progress-fill" id="tx-progress"></div>
                     </div>
                 </div>
                 
-                <button class="btn btn-danger" onclick="cancelSend()" style="margin-top: 15px;">Stop Transmission</button>
+                <button class="btn btn-danger" onclick="cancelSend()" style="margin-top: 10px;">Stop Transmission</button>
             </div>
         </div>
 
@@ -299,14 +335,16 @@
             <div id="scanner-ui">
                 <div class="video-container">
                     <video id="video" playsinline></video>
-                    <!-- Hidden canvas used for reading image data -->
                     <canvas id="rx-canvas" class="hidden"></canvas>
                 </div>
 
-                <div class="info-box" style="margin-top: 20px;">
-                    <div class="info-title" id="rx-status">Waiting for visual signal...</div>
-                    <div id="rx-file-info">Incoming File: Unknown</div>
-                    <div id="rx-frame-info">Progress: 0 / ? frames</div>
+                <div class="info-box" style="margin-top: 15px;">
+                    <div class="info-header">
+                        <span class="info-title" id="rx-status" style="color: var(--text-muted);">Waiting for signal...</span>
+                        <span class="progress-text" id="rx-pct">0%</span>
+                    </div>
+                    <div id="rx-file-info" class="file-name">Incoming File: Unknown</div>
+                    <div id="rx-frame-info" class="frame-info">Progress: 0 / ? frames</div>
                     <div class="progress-wrapper">
                         <div class="progress-fill" id="rx-progress"></div>
                     </div>
@@ -315,18 +353,29 @@
 
             <!-- Preview / Download Result -->
             <div id="preview-area" class="hidden">
-                <h3 class="success-text">File Received Successfully</h3>
-                <div id="preview-content" style="width: 100%; text-align: center;"></div>
+                <div class="file-summary">
+                    <div class="success-text">🎉 Received!</div>
+                    <div style="font-size: 3rem; margin-bottom: 10px;">📦</div>
+                    <h4 id="summary-filename" style="margin-bottom: 5px; font-size: 1.1rem; word-break: break-all;">Filename.ext</h4>
+                    <p id="summary-filetype" style="font-size: 0.85rem; color: var(--text-muted);">application/octet-stream</p>
+                </div>
+
+                <div class="button-group">
+                    <button id="btn-preview" class="btn btn-secondary">
+                        👁️ Preview
+                    </button>
+                    <button id="btn-download" class="btn btn-success">
+                        💾 Download
+                    </button>
+                </div>
                 
-                <button id="btn-download" class="btn btn-success">Save File to Device</button>
-                <button class="btn btn-danger" onclick="setMode('receive')" style="margin-top: 10px;">Receive Another File</button>
+                <button class="btn btn-secondary" onclick="setMode('receive')" style="margin-top: 5px;">Scan Another File</button>
             </div>
         </div>
     </div>
 
     <script>
         // === GLOBAL CONSTANTS & VARIABLES ===
-        // 350 bytes per frame is highly reliable for standard phone/web cameras scanning a computer screen.
         const CHUNK_SIZE = 350; 
         const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB limit
 
@@ -340,19 +389,19 @@
         // Receiver State
         let rxAnimation = null;
         let rxFileMeta = null;
-        let rxChunks = []; // Array to hold base64 pieces
+        let rxChunks = [];
         let rxTotalFrames = 0;
         let rxReceivedCount = 0;
         let rxFileId = null;
         let finalBlobUrl = null;
 
-        // Initialize QR Generator (High Res, Error Correction L for data density)
+        // Initialize QR Generator
         window.onload = () => {
             qr = new QRious({
                 element: document.getElementById('tx-canvas'),
-                size: 500, // Large internal rendering for sharpness
+                size: 500, 
                 level: 'L',
-                padding: 25 // Crucial: Provides the white quiet zone needed by cameras
+                padding: 25 
             });
         };
 
@@ -374,8 +423,6 @@
         }
 
         // === TRANSMITTER (SEND) LOGIC ===
-        
-        // Drag and Drop Handling
         const dropZone = document.getElementById('drop-zone');
         dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
         dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
@@ -403,16 +450,15 @@
 
             document.getElementById('drop-zone').classList.add('hidden');
             document.getElementById('tx-ui').classList.remove('hidden');
-            document.getElementById('tx-status').innerText = "Reading file data...";
+            document.getElementById('tx-status').innerText = "Reading file...";
             document.getElementById('tx-file-name').innerText = `File: ${file.name} (${(file.size/1024/1024).toFixed(2)} MB)`;
             document.getElementById('tx-progress').style.width = "0%";
+            document.getElementById('tx-pct').innerText = "0%";
             
-            // Allow UI to paint before blocking thread
             setTimeout(() => {
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     const dataUrl = e.target.result;
-                    
                     let mimeType = file.type || 'application/octet-stream';
                     let base64Data = '';
                     
@@ -427,22 +473,18 @@
                     const fileId = Math.random().toString(36).substring(2, 8).toUpperCase();
                     txChunks = [];
                     
-                    // Split the massive base64 string into scannable frames
                     for (let i = 0; i < base64Data.length; i += CHUNK_SIZE) {
                         txChunks.push(base64Data.substring(i, i + CHUNK_SIZE));
                     }
                     
                     const totalFrames = txChunks.length;
-                    
-                    // Format: D|fileID|index|totalFrames|data
                     txChunks = txChunks.map((chunk, index) => `D|${fileId}|${index}|${totalFrames}|${chunk}`);
 
-                    // Prepend Metadata Header Frame
-                    // Format: M|fileID|totalFrames|fileName|mimeType
                     const metaFrame = `M|${fileId}|${totalFrames}|${file.name}|${mimeType}`;
                     txChunks.unshift(metaFrame);
 
-                    document.getElementById('tx-status').innerText = "Broadcasting Signal";
+                    document.getElementById('tx-status').innerText = "Broadcasting";
+                    document.getElementById('tx-status').style.color = "var(--primary)";
                     startBroadcast();
                 };
                 reader.readAsDataURL(file);
@@ -467,9 +509,10 @@
                     ? `Transmitting: HEADER METADATA` 
                     : `Transmitting Frame: ${txCurrentFrame} / ${txChunks.length - 1}`;
                 
-                document.getElementById('tx-progress').style.width = `${(txCurrentFrame / (txChunks.length - 1)) * 100}%`;
+                const pct = (txCurrentFrame / (txChunks.length - 1)) * 100;
+                document.getElementById('tx-progress').style.width = `${pct}%`;
+                document.getElementById('tx-pct').innerText = `${Math.round(pct)}%`;
 
-                // Auto-loop for redundant error correction (if receiver misses a frame)
                 txCurrentFrame++;
                 if (txCurrentFrame >= txChunks.length) {
                     txCurrentFrame = 0; 
@@ -485,13 +528,11 @@
         }
 
         // === RECEIVER (RX) LOGIC ===
-
         const video = document.getElementById('video');
         const rxCanvas = document.getElementById('rx-canvas');
         const rxCtx = rxCanvas.getContext('2d', { willReadFrequently: true });
 
         function startCamera() {
-            // Request standard HD for better focus, facing outward on phones
             navigator.mediaDevices.getUserMedia({ 
                 video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } } 
             })
@@ -502,8 +543,8 @@
                 rxAnimation = requestAnimationFrame(scanVideo);
             })
             .catch(function(err) {
-                document.getElementById('rx-status').innerText = "Camera access denied or unavailable.";
-                document.getElementById('rx-status').className = "info-title danger-text";
+                document.getElementById('rx-status').innerText = "Camera unavailable";
+                document.getElementById('rx-status').style.color = "var(--danger)";
             });
         }
 
@@ -527,18 +568,17 @@
             
             document.getElementById('scanner-ui').classList.remove('hidden');
             document.getElementById('preview-area').classList.add('hidden');
-            document.getElementById('preview-content').innerHTML = '';
             
             document.getElementById('rx-file-info').innerText = "Incoming File: Unknown";
             document.getElementById('rx-frame-info').innerText = "Progress: 0 / ? frames";
             document.getElementById('rx-progress').style.width = "0%";
-            document.getElementById('rx-status').innerText = "Waiting for visual signal...";
-            document.getElementById('rx-status').className = "info-title";
+            document.getElementById('rx-pct').innerText = "0%";
+            document.getElementById('rx-status').innerText = "Waiting for signal...";
+            document.getElementById('rx-status').style.color = "var(--text-muted)";
         }
 
         function scanVideo() {
             if (video.readyState === video.HAVE_ENOUGH_DATA) {
-                // Scale down logic to keep CPU usage low while maintaining readability
                 const scanWidth = Math.min(video.videoWidth, 600);
                 const scale = scanWidth / video.videoWidth;
                 const scanHeight = video.videoHeight * scale;
@@ -549,9 +589,8 @@
                 
                 const imageData = rxCtx.getImageData(0, 0, rxCanvas.width, rxCanvas.height);
                 
-                // Read QR Code
                 const code = jsQR(imageData.data, imageData.width, imageData.height, {
-                    inversionAttempts: "dontInvert", // Keeps scanning fast
+                    inversionAttempts: "dontInvert", 
                 });
 
                 if (code && code.data) {
@@ -568,7 +607,6 @@
             const type = parts[0];
             const incomingFileId = parts[1];
 
-            // If a completely new file begins broadcasting, reset our state
             if (rxFileId !== null && incomingFileId !== rxFileId) {
                 resetReceiver();
             }
@@ -577,23 +615,20 @@
             if (type === 'M') {
                 rxTotalFrames = parseInt(parts[2], 10);
                 rxFileMeta = { name: parts[3], type: parts[4] };
-                // Pre-allocate array size for memory efficiency
                 if (rxChunks.length === 0) {
                     rxChunks = new Array(rxTotalFrames);
                 }
-                document.getElementById('rx-file-info').innerText = `Incoming File: ${rxFileMeta.name} (${rxTotalFrames} frames)`;
-                document.getElementById('rx-status').innerText = "Signal acquired. Downloading...";
-                document.getElementById('rx-status').className = "info-title success-text";
+                document.getElementById('rx-file-info').innerText = `File: ${rxFileMeta.name}`;
+                document.getElementById('rx-status').innerText = "Downloading...";
+                document.getElementById('rx-status').style.color = "var(--primary)";
             } 
             else if (type === 'D') {
                 const index = parseInt(parts[2], 10);
-                // Fallback in case we missed the metadata frame
                 if (rxTotalFrames === 0) {
                     rxTotalFrames = parseInt(parts[3], 10);
                     rxChunks = new Array(rxTotalFrames);
                 }
                 
-                // Reconstruct data block (handles strings that naturally contained '|')
                 const chunkData = parts.slice(4).join('|'); 
 
                 if (!rxChunks[index]) {
@@ -608,29 +643,28 @@
 
         function updateRxUI() {
             const total = rxTotalFrames || '?';
-            document.getElementById('rx-frame-info').innerText = `Progress: ${rxReceivedCount} / ${total} frames`;
+            document.getElementById('rx-frame-info').innerText = `Frame: ${rxReceivedCount} / ${total}`;
             
             if (rxTotalFrames > 0) {
                 const pct = (rxReceivedCount / rxTotalFrames) * 100;
                 document.getElementById('rx-progress').style.width = `${pct}%`;
+                document.getElementById('rx-pct').innerText = `${Math.round(pct)}%`;
             }
         }
 
         function checkCompletion() {
             if (rxTotalFrames > 0 && rxReceivedCount === rxTotalFrames) {
-                document.getElementById('rx-status').innerText = "Frames fully collected. Processing...";
+                document.getElementById('rx-status').innerText = "Processing...";
+                document.getElementById('rx-status').style.color = "var(--success)";
                 stopCamera();
-                // Short delay to let UI render the 100% state before blocking compilation
-                setTimeout(compileAndPreview, 100);
+                setTimeout(compileAndReady, 100);
             }
         }
 
-        // Extremely memory-efficient Base64 to Blob converter
         function base64ToBlob(base64, mimeType) {
             const byteCharacters = atob(base64);
             const byteArrays = [];
             
-            // Process in chunks of 512 bytes to prevent max call stack errors
             for (let offset = 0; offset < byteCharacters.length; offset += 512) {
                 const slice = byteCharacters.slice(offset, offset + 512);
                 const byteNumbers = new Array(slice.length);
@@ -643,64 +677,35 @@
             return new Blob(byteArrays, { type: mimeType });
         }
 
-        function compileAndPreview() {
+        function compileAndReady() {
             document.getElementById('scanner-ui').classList.add('hidden');
             
-            // Reassemble the ordered array into one giant string
             const fullBase64 = rxChunks.join('');
-
-            // Generate Binary Blob safely
             const mimeType = rxFileMeta ? rxFileMeta.type : "application/octet-stream";
             const blob = base64ToBlob(fullBase64, mimeType);
+            
+            // Create the Blob URL
             finalBlobUrl = URL.createObjectURL(blob);
 
-            // Construct Preview Interface
-            const previewBox = document.getElementById('preview-content');
-            previewBox.innerHTML = ''; 
-
-            if (mimeType.startsWith('image/')) {
-                const img = document.createElement('img');
-                img.src = finalBlobUrl;
-                img.className = 'preview-media';
-                previewBox.appendChild(img);
-            } 
-            else if (mimeType.startsWith('video/')) {
-                const vid = document.createElement('video');
-                vid.src = finalBlobUrl;
-                vid.controls = true;
-                vid.className = 'preview-media';
-                previewBox.appendChild(vid);
-            } 
-            else if (mimeType.startsWith('audio/')) {
-                const aud = document.createElement('audio');
-                aud.src = finalBlobUrl;
-                aud.controls = true;
-                aud.style.width = '100%';
-                previewBox.appendChild(aud);
-            }
-            else if (mimeType === 'text/plain') {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const txt = document.createElement('div');
-                    txt.className = 'preview-text';
-                    txt.innerText = e.target.result;
-                    previewBox.appendChild(txt);
-                };
-                reader.readAsText(blob);
-            } 
-            else {
-                previewBox.innerHTML = `<p style="color: var(--text-muted); margin-bottom: 10px;">
-                    Preview not available for this file type.<br>Ready to download.
-                </p>`;
-            }
-
+            // Populate File Summary UI
+            document.getElementById('summary-filename').innerText = rxFileMeta ? rxFileMeta.name : "Unknown_File";
+            document.getElementById('summary-filetype').innerText = mimeType;
+            
             document.getElementById('preview-area').classList.remove('hidden');
         }
 
-        // Trigger the actual File Download
+        // --- BUTTON ACTIONS ---
+
+        // 1. Preview in New Tab
+        document.getElementById('btn-preview').addEventListener('click', () => {
+            if (!finalBlobUrl) return;
+            window.open(finalBlobUrl, '_blank');
+        });
+
+        // 2. Download to Device
         document.getElementById('btn-download').addEventListener('click', () => {
             if (!finalBlobUrl) return;
-            const fileName = rxFileMeta ? rxFileMeta.name : "received_file.bin";
+            const fileName = rxFileMeta ? rxFileMeta.name : "qrdrop_file.bin";
             const a = document.createElement('a');
             a.href = finalBlobUrl;
             a.download = fileName;
